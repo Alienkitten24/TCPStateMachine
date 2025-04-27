@@ -35,7 +35,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     byte[] data = {'h', 'e', 'l', 'l', 'o', '\0'};
     TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, initAckNum, false, true, false, windowSize, data);
     TCPWrapper.send(synPack, address);
-    System.out.println("connect");
+    System.out.println("YOPIERRE");
   }
   
   /**
