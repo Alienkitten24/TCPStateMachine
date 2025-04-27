@@ -34,7 +34,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     int windowSize = 1; 
     // byte[] data = {'h', 'e', 'l', 'l', 'o', '\0'};
 
-    TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, null, false, true, false, windowSize, null);
+    TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, 0, false, true, false, windowSize, null);
     TCPWrapper.send(synPack, address);
 
     System.out.println("YOPIERRE");
@@ -61,7 +61,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       
       // TODO prob need to double chech this
       D.unregisterListeningSocket(localport, this);
-      D.registerConnection(address, destport, localport, this);
+      D.registerConnection(address, remoteport, localport, this);
 
       TCPPacket synAckPack = new TCPPacket(localport, remoteport, initAckNum, seqNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
