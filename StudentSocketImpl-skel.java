@@ -60,8 +60,13 @@ class StudentSocketImpl extends BaseSocketImpl {
       int windowSize = 1; 
       
       // TODO prob need to double chech this
-      D.unregisterListeningSocket(localport, this);
-      D.registerConnection(address, remoteport, localport, this);
+      try {
+        D.unregisterListeningSocket(localport, this);
+        D.registerConnection(address, remoteport, localport, this);
+      }
+      catch (IOException e) {
+        e.printStackTrace();
+      }
 
       TCPPacket synAckPack = new TCPPacket(localport, remoteport, initAckNum, seqNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
