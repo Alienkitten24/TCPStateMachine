@@ -143,7 +143,7 @@ class Demultiplexer extends Thread {
 
         
         if (c!=null){ // if connection found
-            // System.out.println("%% connection found: "+c);
+            System.out.println("%% connection found: "+c);
             c.receivePacket( packet );
         }
         else if (packet.synFlag) { // if packet is a SYN to open connection
