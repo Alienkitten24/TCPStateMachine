@@ -30,11 +30,11 @@ class StudentSocketImpl extends BaseSocketImpl {
     D.registerConnection(address, localport, port, this);
 
     int initSeqNum = 100; // typically a random number
-    int initAckNum = 150; // also typically random
+    // int initAckNum = 150; // also typically random
     int windowSize = 1; 
-    byte[] data = {'h', 'e', 'l', 'l', 'o', '\0'};
+    // byte[] data = {'h', 'e', 'l', 'l', 'o', '\0'};
 
-    TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, initAckNum, false, true, false, windowSize, data);
+    TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, null, false, true, false, windowSize, null);
     TCPWrapper.send(synPack, address);
 
     System.out.println("YOPIERRE");
@@ -49,7 +49,29 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     // if p == syn pack { send SYN_ACK }
     if (p.ackFlag) {
-      System.out.println("HEADLOCK");
+      System.out.println("SYN YESSIR");
+
+      InetAddress address = p.sourceAddr;
+      int localport = p.destPort;
+      int remoteport = p.sourcePort; 
+      int initAckNum = 150; // also typically random
+      int seqNum = p.seqNum + 1;
+      int windowSize = 1; 
+      
+      // TODO prob need to double chech this
+      D.unregisterListeningSocket(localport, this);
+      D.registerConnection(address, destport, localport, this);
+
+      TCPPacket synAckPack = new TCPPacket(localport, remoteport, initAckNum, seqNum, true, true, false, windowSize, null);
+      TCPWrapper.send(synAckPack, address);
+    }
+
+    if (p.ackFlag && p.synFlag) {
+      System.out.println("SYNACK YESSIR");
+    }
+
+    if (p.ackFlag) {
+      System.out.println("ACK YESSIR");
     }
   }
   
@@ -61,7 +83,7 @@ class StudentSocketImpl extends BaseSocketImpl {
    * Note that localport is already set prior to this being called.
    */
   public synchronized void acceptConnection() throws IOException {
-    System.out.println("Port is " + port);
+    // System.out.println("Port is " + port);
     D.registerListeningSocket(localport, this);
   }
 
