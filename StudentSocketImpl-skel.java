@@ -45,10 +45,11 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @param p The packet that arrived
    */
   public synchronized void receivePacket(TCPPacket p){
-    p.getDebugOutput();
+    System.out.println("BIRTHOFRAP");
+    System.out.println(p.getDebugOutput());
 
     // if p == syn pack { send SYN_ACK }
-    if (p.ackFlag) {
+    if (p.synFlag) {
       System.out.println("HEADLOCK");
     }
   }
@@ -61,7 +62,7 @@ class StudentSocketImpl extends BaseSocketImpl {
    * Note that localport is already set prior to this being called.
    */
   public synchronized void acceptConnection() throws IOException {
-    System.out.println("Port is " + port);
+    // System.out.println("Port is " + port);
     D.registerListeningSocket(localport, this);
   }
 
