@@ -33,6 +33,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     int initAckNum = 150; // also typically random
     int windowSize = 1; 
     byte[] data = {'h', 'e', 'l', 'l', 'o', '\0'};
+
     TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, initAckNum, false, true, false, windowSize, data);
     TCPWrapper.send(synPack, address);
 
@@ -60,6 +61,7 @@ class StudentSocketImpl extends BaseSocketImpl {
    * Note that localport is already set prior to this being called.
    */
   public synchronized void acceptConnection() throws IOException {
+    System.out.println("Port is " + port);
     D.registerListeningSocket(port, this);
   }
 
