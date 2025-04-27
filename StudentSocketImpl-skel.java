@@ -69,7 +69,7 @@ class StudentSocketImpl extends BaseSocketImpl {
         e.printStackTrace();
       }
 
-      TCPPacket synAckPack = new TCPPacket(localport, remoteport, initAckNum, seqNum, true, true, false, windowSize, null);
+      TCPPacket synAckPack = new TCPPacket(remoteport, localport, initAckNum, seqNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
     }
 
