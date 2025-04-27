@@ -48,7 +48,8 @@ class StudentSocketImpl extends BaseSocketImpl {
     System.out.println("BIRTHOFRAP");
     System.out.println(p.getDebugOutput());
 
-    // if p == syn pack { send SYN_ACK }
+    this.notifyAll(); 
+
     if (p.ackFlag) {
       System.out.println("SYN YESSIR");
 
