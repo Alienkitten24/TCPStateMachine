@@ -50,7 +50,7 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     this.notifyAll(); 
 
-    if (p.ackFlag) {
+    if (p.synFlag) {
       System.out.println("SYN YESSIR");
 
       InetAddress address = p.sourceAddr;
