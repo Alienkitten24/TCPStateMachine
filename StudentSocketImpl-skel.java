@@ -136,10 +136,10 @@ class StudentSocketImpl extends BaseSocketImpl {
     // System.out.println("Register listen socket port is " + localport);
     D.registerListeningSocket(localport, this);
 
-    changeStates(State.SYN_RCVD);
+    changeStates(State.LISTEN);
 
     // wait until state has advanced to ESTABLISHED before returning 
-    while (currentState != State.ESTABLISHED) {
+    while (currentState != State.SYN_RCVD) {
       continue; 
     }
   }
