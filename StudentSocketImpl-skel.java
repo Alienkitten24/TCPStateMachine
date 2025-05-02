@@ -12,6 +12,10 @@ class StudentSocketImpl extends BaseSocketImpl {
   private Demultiplexer D;
   private Timer tcpTimer;
 
+  private enum state {
+    CLOSED, 
+    ESTABLISHED
+  }
 
   StudentSocketImpl(Demultiplexer D) {  // default constructor
     this.D = D;
@@ -27,6 +31,7 @@ class StudentSocketImpl extends BaseSocketImpl {
    */
   public synchronized void connect(InetAddress address, int port) throws IOException{
     localport = D.getNextAvailablePort();
+    System.out.println("Connect() register connection is " + address + " " + localport + " " + port);
     D.registerConnection(address, localport, port, this);
 
     int initSeqNum = 100; // typically a random number
@@ -36,6 +41,11 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, 0, false, true, false, windowSize, null);
     TCPWrapper.send(synPack, address);
+
+    // wait until state has advanced to ESTABLISHED before returning 
+    while (state != state.ESTABLISHED) {
+      continue; 
+    }
 
     System.out.println("YOPIERRE");
   }
@@ -50,34 +60,47 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     this.notifyAll(); 
 
-    if (p.synFlag) {
+    if (p.synFlag && !p.ackFlag) {
       System.out.println("SYN YESSIR");
 
       InetAddress address = p.sourceAddr;
       int localport = p.destPort;
       int remoteport = p.sourcePort; 
       int initAckNum = 150; // also typically random
-      int seqNum = p.seqNum + 1;
+      int ackNum = p.seqNum + 1;
+      int seqNum = initAckNum;
       int windowSize = 1; 
       
       // TODO prob need to double chech this
       try {
         D.unregisterListeningSocket(localport, this);
-        D.registerConnection(address, remoteport, localport, this);
+        // System.out.println("SYN() register connection is " + address + " " + localport + " " + remoteport + " " + this);
+        // System.out.println(address);
+        D.registerConnection(address, localport, remoteport, this);
       }
       catch (IOException e) {
         e.printStackTrace();
       }
 
-      TCPPacket synAckPack = new TCPPacket(remoteport, localport, initAckNum, seqNum, true, true, false, windowSize, null);
+      TCPPacket synAckPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
     }
 
-    if (p.ackFlag && p.synFlag) {
+    else if (p.synFlag && p.ackFlag) {
       System.out.println("SYNACK YESSIR");
+
+      InetAddress address = p.sourceAddr;
+      int localport = p.destPort;
+      int remoteport = p.sourcePort; 
+      int seqNum = p.ackNum; 
+      int ackNum = p.seqNum + 1;
+      int windowSize = 1; 
+
+      TCPPacket AckPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
+      TCPWrapper.send(AckPack, address);
     }
 
-    if (p.ackFlag) {
+    else if (!p.synFlag && p.ackFlag) {
       System.out.println("ACK YESSIR");
     }
   }
@@ -90,8 +113,13 @@ class StudentSocketImpl extends BaseSocketImpl {
    * Note that localport is already set prior to this being called.
    */
   public synchronized void acceptConnection() throws IOException {
-    // System.out.println("Port is " + port);
+    // System.out.println("Register listen socket port is " + localport);
     D.registerListeningSocket(localport, this);
+
+    // wait until state has advanced to ESTABLISHED before returning 
+    while (state != state.ESTABLISHED) {
+      continue; 
+    }
   }
 
   
@@ -157,5 +185,9 @@ class StudentSocketImpl extends BaseSocketImpl {
     // this must run only once the last timer (30 second timer) has expired
     tcpTimer.cancel();
     tcpTimer = null;
+  }
+
+  public synchronized void changeStates() {
+    
   }
 }

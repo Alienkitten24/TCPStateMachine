@@ -141,7 +141,6 @@ class Demultiplexer extends Thread {
         // either we find connection in the connectionTable, or we find
         // it in the listeningTable, or we dont find the connection at all.
 
-        
         if (c!=null){ // if connection found
             System.out.println("%% connection found: "+c);
             c.receivePacket( packet );
@@ -165,6 +164,8 @@ class Demultiplexer extends Thread {
             }
             else
                 System.err.println("!!! UNMATCHED PACKET");
+                // System.out.println(packet.getDebugOutput()); // TODO delete this
+                // System.out.println(packet.sourceAddr);
         }
         else
             System.err.println("!!! UNMATCHED PACKET");
@@ -192,6 +193,7 @@ class Demultiplexer extends Thread {
         
         // String is a reasonable hash key to identify a unique
         // combination of these 3 variables.
+        // System.out.println("D REGCONN() is " + remoteHost + " " + localPort + " " + remotePort);
         String hashKey = getHashTableKey(remoteHost,localPort,remotePort);
         if (connectionTable.get(hashKey)!=null)
             throw(new IOException("%% CONNECTION EXISTS ALREADY"));
