@@ -22,7 +22,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     FIN_WAIT_2,
     CLOSE_WAIT,
     CLOSING,
-    LASK_ACK,
+    LAST_ACK,
     TIME_WAIT
   }
 
@@ -122,7 +122,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       // int seqNum = p.ackNum; 
       // int ackNum = p.seqNum + 1;
       ackNum = p.seqNum + 1;
-      seqNum = initAckNum;
+      seqNum = ackNum;
       int windowSize = 1; 
 
       TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
@@ -137,13 +137,13 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.ESTABLISHED);
     }
 
-    else if (p.finFlag && (currentState == ESTABLISHED)) {
+    else if (p.finFlag && (currentState == State.ESTABLISHED)) {
       // go to closewait
       InetAddress address = p.sourceAddr;
       int localport = p.destPort;
       int remoteport = p.sourcePort; 
       ackNum = p.seqNum + 1;
-      seqNum = initAckNum;
+      seqNum = ackNum;
       int windowSize = 1; 
 
       TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
@@ -152,13 +152,13 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.CLOSE_WAIT);
     }
 
-    else if (p.finFlag && (currentState == FIN_WAIT_1)) {
+    else if (p.finFlag && (currentState == State.FIN_WAIT_1)) {
       // go to closing
       InetAddress address = p.sourceAddr;
       int localport = p.destPort;
       int remoteport = p.sourcePort; 
       ackNum = p.seqNum + 1;
-      seqNum = initAckNum;
+      seqNum = ackNum;
       int windowSize = 1; 
 
       TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
@@ -167,13 +167,13 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.CLOSING);
     }
 
-    else if (p.finFlag && (currentState == FIN_WAIT_2)) {
+    else if (p.finFlag && (currentState == State.FIN_WAIT_2)) {
       // go to timewait
       InetAddress address = p.sourceAddr;
       int localport = p.destPort;
       int remoteport = p.sourcePort; 
       ackNum = p.seqNum + 1;
-      seqNum = initAckNum;
+      seqNum = ackNum;
       int windowSize = 1; 
 
       TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
@@ -182,12 +182,12 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.TIME_WAIT);
     }
 
-    else if (p.ackFlag && (currentState == FIN_WAIT_1)) {
+    else if (p.ackFlag && (currentState == State.FIN_WAIT_1)) {
       // go to finwait2
       changeStates(State.FIN_WAIT_2);
     }
 
-    else if (p.ackFlag && (currentState == CLOSING)) {
+    else if (p.ackFlag && (currentState == State.CLOSING)) {
       // go to timewait
       changeStates(State.TIME_WAIT);
     }
@@ -258,23 +258,23 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @exception  IOException  if an I/O error occurs when closing this socket.
    */
   public synchronized void close() throws IOException {
-    InetAddress address = address;
-    int localport = localport;
-    int remoteport = port; 
+    // InetAddress address = address;
+    // int localport = localport;
+    // int remoteport = port; 
     // int seqNum = p.ackNum; 
     // int ackNum = p.seqNum + 1;
-    ackNum = p.seqNum + 1;
-    seqNum = initAckNum;
+    ackNum = seqNum + 1;
+    seqNum = ackNum;
     int windowSize = 1; 
 
-    TCPPacket finPack = new TCPPacket(localport, remoteport, seqNum, ackNum, false, false, true, windowSize, null);
+    TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
     TCPWrapper.send(finPack, address);
 
-    if (currentState == ESTABLISHED) {
-      changeStates(FIN_WAIT_1);
+    if (currentState == State.ESTABLISHED) {
+      changeStates(State.FIN_WAIT_1);
     }
-    else if (currentState == CLOSE_WAIT) {
-      changeStates(LASK_ACK);
+    else if (currentState == State.CLOSE_WAIT) {
+      changeStates(State.LAST_ACK);
     }
   }
 
