@@ -27,6 +27,11 @@ class StudentSocketImpl extends BaseSocketImpl {
   }
 
   private State currentState = State.CLOSED;
+  private int initSeqNum = 100;
+  private int initAckNum = 100;
+  private int seqNum;
+  private int ackNum;
+
 
   StudentSocketImpl(Demultiplexer D) {  // default constructor
     this.D = D;
@@ -45,7 +50,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     System.out.println("Connect() register connection is " + address + " " + localport + " " + port);
     D.registerConnection(address, localport, port, this);
 
-    int initSeqNum = 100; // typically a random number
+    // int initSeqNum = 100; // typically a random number
     // int initAckNum = 150; // also typically random
     int windowSize = 1; 
     // byte[] data = {'h', 'e', 'l', 'l', 'o', '\0'};
@@ -66,7 +71,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     }
     // changeStates()
 
-    System.out.println("YOPIERRE");
+    // System.out.println("YOPIERRE");
   }
   
   /**
@@ -84,9 +89,11 @@ class StudentSocketImpl extends BaseSocketImpl {
       InetAddress address = p.sourceAddr;
       int localport = p.destPort;
       int remoteport = p.sourcePort; 
-      int initAckNum = 150; // also typically random
-      int ackNum = p.seqNum + 1;
-      int seqNum = initAckNum;
+      // int initAckNum = 150; // also typically random
+      // int ackNum = p.seqNum + 1;
+      // int seqNum = initAckNum;
+      ackNum = p.seqNum + 1;
+      seqNum = initAckNum;
       int windowSize = 1; 
       
       // TODO prob need to double chech this
@@ -112,12 +119,14 @@ class StudentSocketImpl extends BaseSocketImpl {
       InetAddress address = p.sourceAddr;
       int localport = p.destPort;
       int remoteport = p.sourcePort; 
-      int seqNum = p.ackNum; 
-      int ackNum = p.seqNum + 1;
+      // int seqNum = p.ackNum; 
+      // int ackNum = p.seqNum + 1;
+      ackNum = p.seqNum + 1;
+      seqNum = initAckNum;
       int windowSize = 1; 
 
-      TCPPacket AckPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
-      TCPWrapper.send(AckPack, address);
+      TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
+      TCPWrapper.send(ackPack, address);
 
       changeStates(State.ESTABLISHED);
     }
@@ -126,6 +135,61 @@ class StudentSocketImpl extends BaseSocketImpl {
       System.out.println("ACK YESSIR");
  
       changeStates(State.ESTABLISHED);
+    }
+
+    else if (p.finFlag && (currentState == ESTABLISHED)) {
+      // go to closewait
+      InetAddress address = p.sourceAddr;
+      int localport = p.destPort;
+      int remoteport = p.sourcePort; 
+      ackNum = p.seqNum + 1;
+      seqNum = initAckNum;
+      int windowSize = 1; 
+
+      TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
+      TCPWrapper.send(ackPack, address);
+
+      changeStates(State.CLOSE_WAIT);
+    }
+
+    else if (p.finFlag && (currentState == FIN_WAIT_1)) {
+      // go to closing
+      InetAddress address = p.sourceAddr;
+      int localport = p.destPort;
+      int remoteport = p.sourcePort; 
+      ackNum = p.seqNum + 1;
+      seqNum = initAckNum;
+      int windowSize = 1; 
+
+      TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
+      TCPWrapper.send(ackPack, address);
+
+      changeStates(State.CLOSING);
+    }
+
+    else if (p.finFlag && (currentState == FIN_WAIT_2)) {
+      // go to timewait
+      InetAddress address = p.sourceAddr;
+      int localport = p.destPort;
+      int remoteport = p.sourcePort; 
+      ackNum = p.seqNum + 1;
+      seqNum = initAckNum;
+      int windowSize = 1; 
+
+      TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
+      TCPWrapper.send(ackPack, address);
+
+      changeStates(State.TIME_WAIT);
+    }
+
+    else if (p.ackFlag && (currentState == FIN_WAIT_1)) {
+      // go to finwait2
+      changeStates(State.FIN_WAIT_2);
+    }
+
+    else if (p.ackFlag && (currentState == CLOSING)) {
+      // go to timewait
+      changeStates(State.TIME_WAIT);
     }
 
     this.notifyAll(); 
@@ -194,6 +258,24 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @exception  IOException  if an I/O error occurs when closing this socket.
    */
   public synchronized void close() throws IOException {
+    InetAddress address = address;
+    int localport = localport;
+    int remoteport = port; 
+    // int seqNum = p.ackNum; 
+    // int ackNum = p.seqNum + 1;
+    ackNum = p.seqNum + 1;
+    seqNum = initAckNum;
+    int windowSize = 1; 
+
+    TCPPacket finPack = new TCPPacket(localport, remoteport, seqNum, ackNum, false, false, true, windowSize, null);
+    TCPWrapper.send(finPack, address);
+
+    if (currentState == ESTABLISHED) {
+      changeStates(FIN_WAIT_1);
+    }
+    else if (currentState == CLOSE_WAIT) {
+      changeStates(LASK_ACK);
+    }
   }
 
   /** 
@@ -220,8 +302,10 @@ class StudentSocketImpl extends BaseSocketImpl {
     tcpTimer = null;
   }
 
-  public synchronized void changeStates(State nextState) {
+  private synchronized void changeStates(State nextState) {
     System.out.println("!!! " + currentState + "->" + nextState);  
     currentState = nextState;
   }
+
+  // private synchronized void increment 
 }
