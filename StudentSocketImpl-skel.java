@@ -72,7 +72,6 @@ class StudentSocketImpl extends BaseSocketImpl {
     System.out.println("BIRTHOFRAP");
     System.out.println(p.getDebugOutput());
 
-    this.notifyAll(); 
 
     if (p.synFlag && !p.ackFlag) {
       System.out.println("SYN YESSIR");
@@ -123,6 +122,8 @@ class StudentSocketImpl extends BaseSocketImpl {
  
       changeStates(State.ESTABLISHED);
     }
+
+    this.notifyAll(); 
   }
   
   /** 
@@ -139,9 +140,12 @@ class StudentSocketImpl extends BaseSocketImpl {
     changeStates(State.LISTEN);
 
     // wait until state has advanced to ESTABLISHED before returning 
+    /*
     while (currentState != State.SYN_RCVD) {
+      System.out.println(currentState);
       continue; 
     }
+    */
   }
 
   
