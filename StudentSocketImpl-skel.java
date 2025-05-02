@@ -57,7 +57,12 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     // wait until state has advanced to ESTABLISHED before returning 
     while (currentState != State.ESTABLISHED) {
-      continue; 
+      try {
+        this.wait();
+      }
+      catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
     // changeStates()
 
