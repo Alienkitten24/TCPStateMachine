@@ -12,10 +12,21 @@ class StudentSocketImpl extends BaseSocketImpl {
   private Demultiplexer D;
   private Timer tcpTimer;
 
-  private enum state {
+  private enum State {
     CLOSED, 
-    ESTABLISHED
+    LISTEN,
+    SYN_SENT,
+    SYN_RCVD,
+    ESTABLISHED,
+    FIN_WAIT_1,
+    FIN_WAIT_2,
+    CLOSE_WAIT,
+    CLOSING,
+    LASK_ACK,
+    TIME_WAIT
   }
+
+  private State currentState = State.CLOSED;
 
   StudentSocketImpl(Demultiplexer D) {  // default constructor
     this.D = D;
@@ -42,10 +53,13 @@ class StudentSocketImpl extends BaseSocketImpl {
     TCPPacket synPack = new TCPPacket(localport, port, initSeqNum, 0, false, true, false, windowSize, null);
     TCPWrapper.send(synPack, address);
 
+    changeStates(State.SYN_SENT);
+
     // wait until state has advanced to ESTABLISHED before returning 
-    while (state != state.ESTABLISHED) {
+    while (currentState != State.ESTABLISHED) {
       continue; 
     }
+    // changeStates()
 
     System.out.println("YOPIERRE");
   }
@@ -84,6 +98,8 @@ class StudentSocketImpl extends BaseSocketImpl {
 
       TCPPacket synAckPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
+
+      changeStates(State.SYN_RCVD);
     }
 
     else if (p.synFlag && p.ackFlag) {
@@ -98,10 +114,14 @@ class StudentSocketImpl extends BaseSocketImpl {
 
       TCPPacket AckPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(AckPack, address);
+
+      changeStates(State.ESTABLISHED);
     }
 
     else if (!p.synFlag && p.ackFlag) {
       System.out.println("ACK YESSIR");
+ 
+      changeStates(State.ESTABLISHED);
     }
   }
   
@@ -116,8 +136,10 @@ class StudentSocketImpl extends BaseSocketImpl {
     // System.out.println("Register listen socket port is " + localport);
     D.registerListeningSocket(localport, this);
 
+    changeStates(State.SYN_RCVD);
+
     // wait until state has advanced to ESTABLISHED before returning 
-    while (state != state.ESTABLISHED) {
+    while (currentState != State.ESTABLISHED) {
       continue; 
     }
   }
@@ -187,7 +209,8 @@ class StudentSocketImpl extends BaseSocketImpl {
     tcpTimer = null;
   }
 
-  public synchronized void changeStates() {
-    
+  public synchronized void changeStates(State nextState) {
+    System.out.println("!!! " + currentState + "->" + nextState);  
+    currentState = nextState;
   }
 }
