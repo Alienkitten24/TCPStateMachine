@@ -144,13 +144,15 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     changeStates(State.LISTEN);
 
-    // wait until state has advanced to ESTABLISHED before returning 
-    /*
+    // wait until state has advanced to SYN_RCVD before returning 
     while (currentState != State.SYN_RCVD) {
-      System.out.println(currentState);
-      continue; 
+      try {
+        this.wait();
+      }
+      catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
-    */
   }
 
   
