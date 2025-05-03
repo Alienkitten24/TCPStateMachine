@@ -77,7 +77,7 @@ class StudentSocketImpl extends BaseSocketImpl {
   public synchronized void receivePacket(TCPPacket p){
     System.out.println("BIRTHOFRAP");
     System.out.println(p.getDebugOutput());
-
+    System.out.flush();
 
     if (p.synFlag && !p.ackFlag) {
       System.out.println("SYN YESSIR");
@@ -230,7 +230,8 @@ class StudentSocketImpl extends BaseSocketImpl {
     // int remoteport = port; 
     // int seqNum = p.ackNum; 
     // int ackNum = p.seqNum + 1;
-	  //wrong since seqnum is out of sync with p.seqNum
+
+    // wrong since seqnum is out of sync with p.seqNum
     int tempSeqNum = seqNum;
     seqNum = ackNum;
     ackNum = tempSeqNum + 1;
