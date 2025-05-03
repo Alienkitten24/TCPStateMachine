@@ -28,7 +28,7 @@ class StudentSocketImpl extends BaseSocketImpl {
 
   private State currentState = State.CLOSED;
   private static int initSeqNum = 100;
-  private static int initAckNum = 100;
+  private static int initAckNum = 150;
   private int seqNum = initSeqNum; 
   private int ackNum = initAckNum;
   private int windowSize = 1;
@@ -230,8 +230,10 @@ class StudentSocketImpl extends BaseSocketImpl {
     // int remoteport = port; 
     // int seqNum = p.ackNum; 
     // int ackNum = p.seqNum + 1;
-    ackNum = seqNum + 1;
+	  //wrong since seqnum is out of sync with p.seqNum
+    int tempSeqNum = seqNum;
     seqNum = ackNum;
+    ackNum = tempSeqNum + 1;
     // int windowSize = 1; 
 
     System.out.println("CLOSING " + address + " " + localport + " " + port + " ");
@@ -280,7 +282,9 @@ class StudentSocketImpl extends BaseSocketImpl {
     address = p.sourceAddr;
     localport = p.destPort;
     port = p.sourcePort; // remoteport = p.sourceport
+    int tempSeqNum = p.seqNum;
     seqNum = ackNum;
-    ackNum = p.seqNum + 1;
+    ackNum = tempSeqNum + 1;
+    System.out.println("Changing Info " + address + " " + localport + " " + port);
   }
 }
