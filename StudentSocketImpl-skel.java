@@ -273,6 +273,8 @@ class StudentSocketImpl extends BaseSocketImpl {
     seqNum = ackNum;
     int windowSize = 1; 
 
+    System.out.println("CLOSING " + address + " " + localport + " " + port + " ");
+
     TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
     TCPWrapper.send(finPack, address);
 
