@@ -86,9 +86,12 @@ class StudentSocketImpl extends BaseSocketImpl {
     if (p.synFlag && !p.ackFlag) {
       System.out.println("SYN YESSIR");
 
-      InetAddress address = p.sourceAddr;
-      int localport = p.destPort;
-      int remoteport = p.sourcePort; 
+      // InetAddress address = p.sourceAddr;
+      // int localport = p.destPort;
+      // int remoteport = p.sourcePort; 
+      address = p.sourceAddr;
+      localport = p.destPort;
+      port = p.sourcePort; // remoteport = soruceport
       // int initAckNum = 150; // also typically random
       // int ackNum = p.seqNum + 1;
       // int seqNum = initAckNum;
@@ -101,13 +104,13 @@ class StudentSocketImpl extends BaseSocketImpl {
         D.unregisterListeningSocket(localport, this);
         // System.out.println("SYN() register connection is " + address + " " + localport + " " + remoteport + " " + this);
         // System.out.println(address);
-        D.registerConnection(address, localport, remoteport, this);
+        D.registerConnection(address, localport, port, this);
       }
       catch (IOException e) {
         e.printStackTrace();
       }
 
-      TCPPacket synAckPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, true, false, windowSize, null);
+      TCPPacket synAckPack = new TCPPacket(localport, port, seqNum, ackNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
 
       changeStates(State.SYN_RCVD);
@@ -116,16 +119,19 @@ class StudentSocketImpl extends BaseSocketImpl {
     else if (p.synFlag && p.ackFlag) {
       System.out.println("SYNACK YESSIR");
 
-      InetAddress address = p.sourceAddr;
-      int localport = p.destPort;
-      int remoteport = p.sourcePort; 
+      // InetAddress address = p.sourceAddr;
+      // int localport = p.destPort;
+      // int remoteport = p.sourcePort; 
+      address = p.sourceAddr;
+      localport = p.destPort;
+      port = p.sourcePort; // remoteport = soruceport
       // int seqNum = p.ackNum; 
       // int ackNum = p.seqNum + 1;
       ackNum = p.seqNum + 1;
       seqNum = ackNum;
       int windowSize = 1; 
 
-      TCPPacket ackPack = new TCPPacket(localport, remoteport, seqNum, ackNum, true, false, false, windowSize, null);
+      TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
 
       changeStates(State.ESTABLISHED);
