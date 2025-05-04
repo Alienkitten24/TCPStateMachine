@@ -26,7 +26,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     TIME_WAIT
   }
 
-  private State currentState = State.CLOSED;
+  public State currentState = State.CLOSED;
   private static int initSeqNum = 100;
   private static int initAckNum = 150;
   private int seqNum = initSeqNum; 
@@ -235,11 +235,11 @@ class StudentSocketImpl extends BaseSocketImpl {
    */
   public synchronized void close() throws IOException {
 
-    // if (address == null || port == 0) {
-    //     System.out.println("Server socket: No connection established, skipping FIN packet.");
-    //     // changeStates(State.CLOSED); // Directly transition to CLOSED state
-    //     return;
-    // }
+    if (address == null || port == 0) {
+        System.out.println("Server socket: No connection established, skipping FIN packet.");
+        // changeStates(State.CLOSED); // Directly transition to CLOSED state
+        return;
+    }
 
     // wrong since seqnum is out of sync with p.seqNum -- this might be fixed now ?
     int tempSeqNum = seqNum;
@@ -281,6 +281,15 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
     TCPWrapper.send(finPack, address);
+
+    try {
+      backgroundThread bgt = new backgroundThread(this);
+      bgt.run();
+    }
+    catch( Exception e){
+      e.printStackTrace();
+    }    
+
   }
 
   /** 
@@ -322,5 +331,26 @@ class StudentSocketImpl extends BaseSocketImpl {
     ackNum = tempSeqNum + 1;
     System.out.println("Changing Info " + address + " " + localport + " " + port);
     // System.out.flush();
+  }
+}
+
+// start new thread to cleanup rest of fin process
+class backgroundThread implements Runnable{
+  public StudentSocketImpl s;
+
+  public backgroundThread (StudentSocketImpl s) throws InterruptedException{
+    this.s = s;
+  }
+
+  @Override
+  public void run() {
+    while(s.currentState != StudentSocketImpl.State.CLOSED){
+      try {
+        s.wait();
+      }
+      catch(Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
 }
