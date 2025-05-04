@@ -32,6 +32,7 @@ class StudentSocketImpl extends BaseSocketImpl {
   private int seqNum = initSeqNum; 
   private int ackNum = initAckNum;
   private int windowSize = 1;
+  private boolean isProcessingPacketFlag = false;
 
 
   StudentSocketImpl(Demultiplexer D) {  // default constructor
@@ -75,6 +76,8 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @param p The packet that arrived
    */
   public synchronized void receivePacket(TCPPacket p){
+    isProcessingPacketFlag = true;
+
     System.out.println("BIRTHOFRAP");
     System.out.println(p.getDebugOutput());
     System.out.flush();
@@ -159,6 +162,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.TIME_WAIT);
     }
 
+    isProcessingPacketFlag = false;
     this.notifyAll(); 
   }
   
@@ -225,13 +229,16 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @exception  IOException  if an I/O error occurs when closing this socket.
    */
   public synchronized void close() throws IOException {
-    // InetAddress address = address;
-    // int localport = localport;
-    // int remoteport = port; 
-    // int seqNum = p.ackNum; 
-    // int ackNum = p.seqNum + 1;
+    while (isProcessingPacketFlag) {
+      try {
+        this.wait(); // wait for recievepacket to finish so that currentState is correct
+      }
+      catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
 
-    // wrong since seqnum is out of sync with p.seqNum
+    // wrong since seqnum is out of sync with p.seqNum -- this might be fixed now ?
     int tempSeqNum = seqNum;
     seqNum = ackNum;
     ackNum = tempSeqNum + 1;
@@ -277,6 +284,7 @@ class StudentSocketImpl extends BaseSocketImpl {
   private synchronized void changeStates(State nextState) {
     System.out.println("!!! " + currentState + "->" + nextState);  
     currentState = nextState;
+    this.notifyAll();
   }
 
   private synchronized void setPacketInfo(TCPPacket p) {
@@ -287,5 +295,6 @@ class StudentSocketImpl extends BaseSocketImpl {
     seqNum = ackNum;
     ackNum = tempSeqNum + 1;
     System.out.println("Changing Info " + address + " " + localport + " " + port);
+    System.out.flush();
   }
 }
