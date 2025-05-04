@@ -234,8 +234,11 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @exception  IOException  if an I/O error occurs when closing this socket.
    */
   public synchronized void close() throws IOException {
+	if (isProcessingPacketFlag) {
+      		System.out.println("FLAG");
+		System.out.flush();
+	}
     while (isProcessingPacketFlag) {
-      System.out.println("FLAG");
       try {
         this.wait(); // wait for recievepacket to finish so that currentState is correct
       }
