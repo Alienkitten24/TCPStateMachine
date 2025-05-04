@@ -234,10 +234,10 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @exception  IOException  if an I/O error occurs when closing this socket.
    */
   public synchronized void close() throws IOException {
-	if (isProcessingPacketFlag) {
-      		System.out.println("FLAG");
-		System.out.flush();
-	}
+    if (isProcessingPacketFlag) {
+      System.out.println("FLAG");
+      System.out.flush();
+    }
     while (isProcessingPacketFlag) {
       try {
         this.wait(); // wait for recievepacket to finish so that currentState is correct
@@ -245,6 +245,12 @@ class StudentSocketImpl extends BaseSocketImpl {
       catch (InterruptedException e) {
         e.printStackTrace();
       }
+    }
+
+    if (address == null || port == 0) {
+        System.out.println("Server socket: No connection established, skipping FIN packet.");
+        changeStates(State.CLOSED); // Directly transition to CLOSED state
+        return;
     }
 
     // wrong since seqnum is out of sync with p.seqNum -- this might be fixed now ?
