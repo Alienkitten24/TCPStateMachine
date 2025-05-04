@@ -50,6 +50,7 @@ class StudentSocketImpl extends BaseSocketImpl {
   public synchronized void connect(InetAddress address, int port) throws IOException{
     localport = D.getNextAvailablePort();
     D.registerConnection(address, localport, port, this);
+    this.address = address;
 
     changeStates(State.SYN_SENT);
     // TODO keep an eye on changing initseqnum -> seqnum
