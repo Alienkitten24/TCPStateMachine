@@ -164,6 +164,8 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     else if (p.ackFlag && (currentState == State.LAST_ACK)) {
       // go to timewait
+      System.out.println("glubbed up");
+      System.out.flush();
       changeStates(State.TIME_WAIT);
     }
 
@@ -251,6 +253,8 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
     TCPWrapper.send(finPack, address);
+
+    Thread.sleep(10*500);
 
     if (isProcessingPacketFlag) {
       System.out.println("FLAG");
