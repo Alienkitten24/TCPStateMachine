@@ -235,11 +235,11 @@ class StudentSocketImpl extends BaseSocketImpl {
    */
   public synchronized void close() throws IOException {
 
-    if (address == null || port == 0) {
-        System.out.println("Server socket: No connection established, skipping FIN packet.");
-        // changeStates(State.CLOSED); // Directly transition to CLOSED state
-        return;
-    }
+    // if (address == null || port == 0) {
+    //     System.out.println("Server socket: No connection established, skipping FIN packet.");
+    //     // changeStates(State.CLOSED); // Directly transition to CLOSED state
+    //     return;
+    // }
 
     // wrong since seqnum is out of sync with p.seqNum -- this might be fixed now ?
     int tempSeqNum = seqNum;
