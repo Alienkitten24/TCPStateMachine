@@ -32,7 +32,6 @@ class StudentSocketImpl extends BaseSocketImpl {
   private int seqNum = initSeqNum; 
   private int ackNum = initAckNum;
   private int windowSize = 1;
-  private boolean isProcessingPacketFlag = false;
 
 
   StudentSocketImpl(Demultiplexer D) {  // default constructor
@@ -74,8 +73,6 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @param p The packet that arrived
    */
   public synchronized void receivePacket(TCPPacket p){
-    isProcessingPacketFlag = true;
-
     System.out.println("BIRTHOFRAP");
     System.out.println(p.getDebugOutput());
     System.out.flush();
@@ -167,7 +164,6 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.TIME_WAIT);
     }
 
-    isProcessingPacketFlag = false;
     this.notifyAll(); 
   }
   
@@ -252,6 +248,8 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     System.out.println("CLOSING " + address + " " + localport + " " + port + " ");
 
+    TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
+    TCPWrapper.send(finPack, address);
 
     try {
       Thread.sleep(10*500);
@@ -260,18 +258,6 @@ class StudentSocketImpl extends BaseSocketImpl {
       e.printStackTrace();
     }
 
-    if (isProcessingPacketFlag) {
-      System.out.println("FLAG");
-      // System.out.flush();
-    }
-    while (isProcessingPacketFlag) {
-      try {
-        this.wait(); // wait for recievepacket to finish so that currentState is correct
-      }
-      catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
     if (currentState == State.ESTABLISHED) {
       changeStates(State.FIN_WAIT_1);
     }
@@ -279,8 +265,6 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.LAST_ACK);
     }
 
-    TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
-    TCPWrapper.send(finPack, address);
 
     try {
       backgroundThread bgt = new backgroundThread(this);
