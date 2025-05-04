@@ -145,6 +145,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
 
+      createTimerTask(30 * 1000, null);
     }
 
     else if (p.ackFlag && (currentState == State.FIN_WAIT_1)) {
@@ -155,6 +156,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     else if (p.ackFlag && (currentState == State.CLOSING)) {
       // go to timewait
       changeStates(State.TIME_WAIT);
+      createTimerTask(30 * 1000, null);
     }
 
     else if (p.ackFlag && (currentState == State.LAST_ACK)) {
@@ -162,6 +164,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       System.out.println("glubbed up");
       // System.out.flush();
       changeStates(State.TIME_WAIT);
+      createTimerTask(30 * 1000, null);
     }
 
     this.notifyAll(); 
