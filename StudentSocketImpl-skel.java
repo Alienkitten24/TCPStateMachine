@@ -49,7 +49,6 @@ class StudentSocketImpl extends BaseSocketImpl {
    */
   public synchronized void connect(InetAddress address, int port) throws IOException{
     localport = D.getNextAvailablePort();
-    System.out.println("Connect() register connection is " + address + " " + localport + " " + port);
     D.registerConnection(address, localport, port, this);
 
     // TODO keep an eye on changing initseqnum -> seqnum
@@ -67,8 +66,6 @@ class StudentSocketImpl extends BaseSocketImpl {
         e.printStackTrace();
       }
     }
-
-    // System.out.println("YOPIERRE");
   }
   
   /**
@@ -80,18 +77,15 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     System.out.println("BIRTHOFRAP");
     System.out.println(p.getDebugOutput());
-    // System.out.flush();
+    System.out.flush();
 
     if (p.synFlag && (currentState == State.LISTEN)) {
       System.out.println("SYN YESSIR");
 
       setPacketInfo(p);
 
-      // TODO prob need to double chech this
       try {
         D.unregisterListeningSocket(localport, this);
-        // System.out.println("SYN() register connection is " + address + " " + localport + " " + port + " " + this);
-        // System.out.println(address);
         D.registerConnection(address, localport, port, this);
       }
       catch (IOException e) {
@@ -133,6 +127,8 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     else if (p.finFlag && (currentState == State.FIN_WAIT_1)) {
       // go to closing
+      System.out.println("HELLLO BRIAN ");
+      System.out.flush();
 
       setPacketInfo(p);
 
@@ -248,6 +244,9 @@ class StudentSocketImpl extends BaseSocketImpl {
     seqNum = ackNum;
     ackNum = tempSeqNum + 1;
     // int windowSize = 1; 
+    // TCPPacket dummyPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, false, windowSize, null);
+    // setPacketInfo(dummyPack)
+
 
     System.out.println("CLOSING " + address + " " + localport + " " + port + " ");
 
