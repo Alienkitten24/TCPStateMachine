@@ -51,11 +51,11 @@ class StudentSocketImpl extends BaseSocketImpl {
     localport = D.getNextAvailablePort();
     D.registerConnection(address, localport, port, this);
 
+    changeStates(State.SYN_SENT);
     // TODO keep an eye on changing initseqnum -> seqnum
     TCPPacket synPack = new TCPPacket(localport, port, seqNum, 0, false, true, false, windowSize, null);
     TCPWrapper.send(synPack, address);
 
-    changeStates(State.SYN_SENT);
 
     // wait until state has advanced to ESTABLISHED before returning 
     while (currentState != State.ESTABLISHED) {
@@ -82,6 +82,8 @@ class StudentSocketImpl extends BaseSocketImpl {
     if (p.synFlag && (currentState == State.LISTEN)) {
       System.out.println("SYN YESSIR");
 
+      changeStates(State.SYN_RCVD);
+
       setPacketInfo(p);
 
       try {
@@ -95,18 +97,17 @@ class StudentSocketImpl extends BaseSocketImpl {
       TCPPacket synAckPack = new TCPPacket(localport, port, seqNum, ackNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
 
-      changeStates(State.SYN_RCVD);
     }
 
     else if (p.synFlag && p.ackFlag && (currentState == State.SYN_SENT)) {
       System.out.println("SYNACK YESSIR");
 
+      changeStates(State.ESTABLISHED);
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
 
-      changeStates(State.ESTABLISHED);
     }
 
     else if (p.ackFlag && (currentState == State.SYN_RCVD)) {
@@ -117,12 +118,12 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     else if (p.finFlag && (currentState == State.ESTABLISHED)) {
       // go to closewait
+      changeStates(State.CLOSE_WAIT);
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
 
-      changeStates(State.CLOSE_WAIT);
     }
 
     else if (p.finFlag && (currentState == State.FIN_WAIT_1)) {
@@ -130,22 +131,22 @@ class StudentSocketImpl extends BaseSocketImpl {
       System.out.println("HELLLO BRIAN ");
       System.out.flush();
 
+      changeStates(State.CLOSING);
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
 
-      changeStates(State.CLOSING);
     }
 
     else if (p.finFlag && (currentState == State.FIN_WAIT_2)) {
       // go to timewait
+      changeStates(State.TIME_WAIT);
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
 
-      changeStates(State.TIME_WAIT);
     }
 
     else if (p.ackFlag && (currentState == State.FIN_WAIT_1)) {
@@ -250,8 +251,6 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     System.out.println("CLOSING " + address + " " + localport + " " + port + " ");
 
-    TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
-    TCPWrapper.send(finPack, address);
 
     try {
       Thread.sleep(10*500);
@@ -278,6 +277,9 @@ class StudentSocketImpl extends BaseSocketImpl {
     else if (currentState == State.CLOSE_WAIT) {
       changeStates(State.LAST_ACK);
     }
+
+    TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
+    TCPWrapper.send(finPack, address);
   }
 
   /** 
