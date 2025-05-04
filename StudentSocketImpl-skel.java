@@ -249,7 +249,7 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     if (address == null || port == 0) {
         System.out.println("Server socket: No connection established, skipping FIN packet.");
-        changeStates(State.CLOSED); // Directly transition to CLOSED state
+        // changeStates(State.CLOSED); // Directly transition to CLOSED state
         return;
     }
 
