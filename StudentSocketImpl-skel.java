@@ -254,7 +254,12 @@ class StudentSocketImpl extends BaseSocketImpl {
     TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
     TCPWrapper.send(finPack, address);
 
-    Thread.sleep(10*500);
+    try {
+      Thread.sleep(10*500);
+    }
+    catch (exception e) {
+      e.printStackTrace();
+    }
 
     if (isProcessingPacketFlag) {
       System.out.println("FLAG");
