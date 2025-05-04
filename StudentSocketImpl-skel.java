@@ -162,6 +162,11 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.TIME_WAIT);
     }
 
+    else if (p.ackFlag && (currentState == State.LAST_ACK)) {
+      // go to timewait
+      changeStates(State.TIME_WAIT);
+    }
+
     isProcessingPacketFlag = false;
     this.notifyAll(); 
   }
@@ -230,6 +235,7 @@ class StudentSocketImpl extends BaseSocketImpl {
    */
   public synchronized void close() throws IOException {
     while (isProcessingPacketFlag) {
+      System.out.println("FLAG");
       try {
         this.wait(); // wait for recievepacket to finish so that currentState is correct
       }
