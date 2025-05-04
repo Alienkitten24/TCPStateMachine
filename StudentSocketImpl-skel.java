@@ -12,7 +12,7 @@ class StudentSocketImpl extends BaseSocketImpl {
   private Demultiplexer D;
   private Timer tcpTimer;
 
-  private enum State {
+  public enum State {
     CLOSED, 
     LISTEN,
     SYN_SENT,
