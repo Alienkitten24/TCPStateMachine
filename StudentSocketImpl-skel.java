@@ -234,18 +234,6 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @exception  IOException  if an I/O error occurs when closing this socket.
    */
   public synchronized void close() throws IOException {
-    if (isProcessingPacketFlag) {
-      System.out.println("FLAG");
-      System.out.flush();
-    }
-    while (isProcessingPacketFlag) {
-      try {
-        this.wait(); // wait for recievepacket to finish so that currentState is correct
-      }
-      catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
 
     if (address == null || port == 0) {
         System.out.println("Server socket: No connection established, skipping FIN packet.");
@@ -264,6 +252,18 @@ class StudentSocketImpl extends BaseSocketImpl {
     TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
     TCPWrapper.send(finPack, address);
 
+    if (isProcessingPacketFlag) {
+      System.out.println("FLAG");
+      System.out.flush();
+    }
+    while (isProcessingPacketFlag) {
+      try {
+        this.wait(); // wait for recievepacket to finish so that currentState is correct
+      }
+      catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
     if (currentState == State.ESTABLISHED) {
       changeStates(State.FIN_WAIT_1);
     }
