@@ -80,9 +80,9 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     System.out.println("BIRTHOFRAP");
     System.out.println(p.getDebugOutput());
-    System.out.flush();
+    // System.out.flush();
 
-    if (p.synFlag && !p.ackFlag) {
+    if (p.synFlag && (currentState == State.LISTEN)) {
       System.out.println("SYN YESSIR");
 
       setPacketInfo(p);
@@ -104,7 +104,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.SYN_RCVD);
     }
 
-    else if (p.synFlag && p.ackFlag) {
+    else if (p.synFlag && p.ackFlag && (currentState == State.SYN_SENT)) {
       System.out.println("SYNACK YESSIR");
 
       setPacketInfo(p);
@@ -115,7 +115,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.ESTABLISHED);
     }
 
-    else if (!p.synFlag && p.ackFlag) {
+    else if (p.ackFlag && (currentState == State.SYN_RCVD)) {
       System.out.println("ACK YESSIR");
  
       changeStates(State.ESTABLISHED);
@@ -165,7 +165,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     else if (p.ackFlag && (currentState == State.LAST_ACK)) {
       // go to timewait
       System.out.println("glubbed up");
-      System.out.flush();
+      // System.out.flush();
       changeStates(State.TIME_WAIT);
     }
 
@@ -257,13 +257,13 @@ class StudentSocketImpl extends BaseSocketImpl {
     try {
       Thread.sleep(10*500);
     }
-    catch (exception e) {
+    catch (Exception e) {
       e.printStackTrace();
     }
 
     if (isProcessingPacketFlag) {
       System.out.println("FLAG");
-      System.out.flush();
+      // System.out.flush();
     }
     while (isProcessingPacketFlag) {
       try {
@@ -319,6 +319,6 @@ class StudentSocketImpl extends BaseSocketImpl {
     seqNum = ackNum;
     ackNum = tempSeqNum + 1;
     System.out.println("Changing Info " + address + " " + localport + " " + port);
-    System.out.flush();
+    // System.out.flush();
   }
 }
