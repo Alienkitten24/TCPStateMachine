@@ -297,7 +297,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       e.printStackTrace();
     }
 
-
+    System.out.println("LIORA " + address + localport + port);
     if (currentState == State.ESTABLISHED) {
       changeStates(State.FIN_WAIT_1);
     }
