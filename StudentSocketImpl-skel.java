@@ -1,6 +1,7 @@
 import java.net.*;
 import java.io.*;
 import java.util.Timer;
+import java.util.Hashtable;
 
 class StudentSocketImpl extends BaseSocketImpl {
 
@@ -32,6 +33,8 @@ class StudentSocketImpl extends BaseSocketImpl {
   private int seqNum = initSeqNum; 
   private int ackNum = initAckNum;
   private int windowSize = 1;
+  private Hashtable<State, TCPTimerTask> timerTable = new Hashtable<>();
+  private Hashtable<State, TCPPacket> packetTable = new Hashtable<>();
 
 
   StudentSocketImpl(Demultiplexer D) {  // default constructor
@@ -52,10 +55,9 @@ class StudentSocketImpl extends BaseSocketImpl {
     this.address = address;
 
     changeStates(State.SYN_SENT);
-    // TODO keep an eye on changing initseqnum -> seqnum
+
     TCPPacket synPack = new TCPPacket(localport, port, seqNum, 0, false, true, false, windowSize, null);
     TCPWrapper.send(synPack, address);
-
 
     // wait until state has advanced to ESTABLISHED before returning 
     while (currentState != State.ESTABLISHED) {
@@ -73,11 +75,16 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @param p The packet that arrived
    */
   public synchronized void receivePacket(TCPPacket p){
-    System.out.println("BIRTHOFRAP");
-    System.out.println(p.getDebugOutput());
-    System.out.flush();
+    // System.out.println(p.getDebugOutput());
+    // System.out.flush();
 
-    if (p.synFlag && (currentState == State.LISTEN)) {
+    if (p.ackFlag && timerTable.containsKey(currentState)) {
+      timerTable.get(currentState).cancel();
+      timerTable.remove(currentState);
+      packetTable.remove(currentState);
+    }
+
+    else if (p.synFlag && (currentState == State.LISTEN)) {
       System.out.println("SYN YESSIR");
 
       changeStates(State.SYN_RCVD);
@@ -93,7 +100,7 @@ class StudentSocketImpl extends BaseSocketImpl {
 
       
       TCPPacket synAckPack = new TCPPacket(localport, port, seqNum, ackNum, true, true, false, windowSize, null);
-      TCPWrapper.send(synAckPack, address);
+      sendPacket(synAckPack);
     }
 
     else if (p.synFlag && p.ackFlag && (currentState == State.SYN_SENT)) {
@@ -103,7 +110,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
-      TCPWrapper.send(ackPack, address);
+      sendPacket(ackPack);
 
     }
 
@@ -119,20 +126,16 @@ class StudentSocketImpl extends BaseSocketImpl {
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
-      TCPWrapper.send(ackPack, address);
-
+      sendPacket(ackPack);
     }
 
     else if (p.finFlag && (currentState == State.FIN_WAIT_1)) {
       // go to closing
-      System.out.println("HELLLO BRIAN ");
-      System.out.flush();
-
       changeStates(State.CLOSING);
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
-      TCPWrapper.send(ackPack, address);
+      sendPacket(ackPack);
 
     }
 
@@ -160,8 +163,6 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     else if (p.ackFlag && (currentState == State.LAST_ACK)) {
       // go to timewait
-      System.out.println("glubbed up");
-      // System.out.flush();
       changeStates(State.TIME_WAIT);
       createTimerTask(30 * 1000, null);
     }
@@ -239,26 +240,17 @@ class StudentSocketImpl extends BaseSocketImpl {
         return;
     }
 
-    // wrong since seqnum is out of sync with p.seqNum -- this might be fixed now ?
-    int tempSeqNum = seqNum;
-    seqNum = ackNum;
-    ackNum = tempSeqNum + 1;
-    // int windowSize = 1; 
-    // TCPPacket dummyPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, false, windowSize, null);
-    // setPacketInfo(dummyPack)
-
-
-    System.out.println("CLOSING " + address + " " + localport + " " + port + " ");
-
     TCPPacket finPack = new TCPPacket(localport, port, seqNum, ackNum, false, false, true, windowSize, null);
     TCPWrapper.send(finPack, address);
 
+    // sleep for a little to let packets between client and server transmitt fully
     try {
       Thread.sleep(10*500);
     }
     catch (Exception e) {
       e.printStackTrace();
     }
+
 
     if (currentState == State.ESTABLISHED) {
       changeStates(State.FIN_WAIT_1);
@@ -267,7 +259,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.LAST_ACK);
     }
 
-
+    // start background threads, let application close
     try {
       backgroundThread bgt = new backgroundThread(this);
       bgt.run();
@@ -303,15 +295,19 @@ class StudentSocketImpl extends BaseSocketImpl {
 
     if (currentState == State.TIME_WAIT) {
       changeStates(State.CLOSED);
-
-      try {
-        System.out.println("OH NAHHH");
-        D.unregisterConnection(address, localport, port, this);
-      }
-      catch (Exception e) {
-        e.printStackTrace();
-      }
     }
+    else {
+      TCPPacket packetToResend = packetTable.get(currentState);
+      sendPacket(packetToResend);
+    }
+
+      // try {
+      //   D.unregisterConnection(address, localport, port, this);
+      // }
+      // catch (Exception e) {
+      //   e.printStackTrace();
+      // }
+    
   }
 
   private synchronized void changeStates(State nextState) {
@@ -327,8 +323,14 @@ class StudentSocketImpl extends BaseSocketImpl {
     int tempSeqNum = p.seqNum;
     seqNum = ackNum;
     ackNum = tempSeqNum + 1;
-    System.out.println("Changing Info " + address + " " + localport + " " + port);
-    // System.out.flush();
+  }
+
+  private synchronized void sendPacket(TCPPacket p) {
+    TCPWrapper.send(p, address);
+    TCPTimerTask timer = createTimerTask(30 * 1000, null);
+
+    timerTable.put(currentState, timer);
+    packetTable.put(currentState, p);
   }
 }
 
