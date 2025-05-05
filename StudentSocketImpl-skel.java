@@ -80,10 +80,6 @@ class StudentSocketImpl extends BaseSocketImpl {
     if (p.synFlag && (currentState == State.LISTEN)) {
       System.out.println("SYN YESSIR");
 
-      changeStates(State.SYN_RCVD);
-
-      setPacketInfo(p);
-
       try {
         D.unregisterListeningSocket(localport, this);
         D.registerConnection(address, localport, port, this);
@@ -92,9 +88,11 @@ class StudentSocketImpl extends BaseSocketImpl {
         e.printStackTrace();
       }
 
+      changeStates(State.SYN_RCVD);
+      setPacketInfo(p);
+      
       TCPPacket synAckPack = new TCPPacket(localport, port, seqNum, ackNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
-
     }
 
     else if (p.synFlag && p.ackFlag && (currentState == State.SYN_SENT)) {
@@ -102,6 +100,7 @@ class StudentSocketImpl extends BaseSocketImpl {
 
       changeStates(State.ESTABLISHED);
       setPacketInfo(p);
+      seqNum = p.ackNum;
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
@@ -234,9 +233,9 @@ class StudentSocketImpl extends BaseSocketImpl {
    */
   public synchronized void close() throws IOException {
 
+    // ServerSocket sock.close() does not have addr or port associated with it, so we can just return
     if (address == null || port == 0) {
-        System.out.println("Server socket: No connection established, skipping FIN packet.");
-        // changeStates(State.CLOSED); // Directly transition to CLOSED state
+        System.out.println("Server socket, returning early");
         return;
     }
 
