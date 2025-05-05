@@ -75,8 +75,6 @@ class StudentSocketImpl extends BaseSocketImpl {
    * @param p The packet that arrived
    */
   public synchronized void receivePacket(TCPPacket p){
-    // System.out.println(p.getDebugOutput());
-    // System.out.flush();
 
     if (p.ackFlag && timerTable.containsKey(currentState)) {
       timerTable.get(currentState).cancel();
@@ -84,88 +82,141 @@ class StudentSocketImpl extends BaseSocketImpl {
       packetTable.remove(currentState);
     }
 
-    else if (p.synFlag && (currentState == State.LISTEN)) {
-      System.out.println("SYN YESSIR");
+    switch (currentState) {
+      case LISTEN:
+        if (p.synFlag) {
+          System.out.println("SYN YESSIR");
 
-      changeStates(State.SYN_RCVD);
-      setPacketInfo(p);
+          changeStates(State.SYN_RCVD);
+          setPacketInfo(p);
 
-      try {
-        D.unregisterListeningSocket(localport, this);
-        D.registerConnection(address, localport, port, this);
-      }
-      catch (IOException e) {
-        e.printStackTrace();
-      }
+          try {
+            D.unregisterListeningSocket(localport, this);
+            D.registerConnection(address, localport, port, this);
+          }
+          catch (IOException e) {
+            e.printStackTrace();
+          }
 
       
-      TCPPacket synAckPack = new TCPPacket(localport, port, seqNum, ackNum, true, true, false, windowSize, null);
-      sendPacket(synAckPack);
-    }
+          TCPPacket synAckPack = new TCPPacket(localport, port, seqNum, ackNum, true, true, false, windowSize, null);
+          sendPacket(synAckPack);
+        }
+        break;
 
-    else if (p.synFlag && p.ackFlag && (currentState == State.SYN_SENT)) {
-      System.out.println("SYNACK YESSIR");
+      case SYN_SENT:
+        if (p.synFlag && p.ackFlag) {
+          System.out.println("SYNACK YESSIR");
 
-      changeStates(State.ESTABLISHED);
-      ackNum = p.ackNum;
-      setPacketInfo(p);
+          changeStates(State.ESTABLISHED);
+          ackNum = p.ackNum;
+          setPacketInfo(p);
 
-      TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
-      sendPacket(ackPack);
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          sendPacket(ackPack);
+        }
+        break;
 
-    }
+      case SYN_RCVD:
+        if (p.ackFlag) {
+          System.out.println("ACK YESSIR");
+    
+          changeStates(State.ESTABLISHED);
+        }
+        break;
 
-    else if (p.ackFlag && (currentState == State.SYN_RCVD)) {
-      System.out.println("ACK YESSIR");
- 
-      changeStates(State.ESTABLISHED);
-    }
+      case ESTABLISHED:
+        if (p.finFlag) {
 
-    else if (p.finFlag && (currentState == State.ESTABLISHED)) {
-      // go to closewait
-      changeStates(State.CLOSE_WAIT);
-      setPacketInfo(p);
+          changeStates(State.CLOSE_WAIT);
+          setPacketInfo(p);
 
-      TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
-      sendPacket(ackPack);
-    }
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          sendPacket(ackPack);
 
-    else if (p.finFlag && (currentState == State.FIN_WAIT_1)) {
-      // go to closing
-      changeStates(State.CLOSING);
-      setPacketInfo(p);
+          if (p.ackFlag && timerTable.containsKey(currentState)) {
+            timerTable.get(currentState).cancel();
+            timerTable.remove(currentState);
+            packetTable.remove(currentState);
+          }
+        }
+        else if (p.synFlag && p.ackFlag) {
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          sendPacket(ackPack);
+        }
+        break;
 
-      TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
-      sendPacket(ackPack);
+      case FIN_WAIT_1:
+        if (p.finFlag) {
 
-    }
+          changeStates(State.CLOSING);
+          setPacketInfo(p);
 
-    else if (p.finFlag && (currentState == State.FIN_WAIT_2)) {
-      // go to timewait
-      changeStates(State.TIME_WAIT);
-      setPacketInfo(p);
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          sendPacket(ackPack);
+        }
+        else if (p.ackFlag) {
+          // go to finwait2
+          changeStates(State.FIN_WAIT_2);
+        }
+        else if (p.synFlag && p.ackFlag) {
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          sendPacket(ackPack);
+        }
+        break;
 
-      TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
-      TCPWrapper.send(ackPack, address);
+      case FIN_WAIT_2:
+        if (p.finFlag) {
+          // go to timewait
+          changeStates(State.TIME_WAIT);
+          setPacketInfo(p);
 
-      createTimerTask(30 * 1000, null);
-    }
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          TCPWrapper.send(ackPack, address);
 
-    else if (p.ackFlag && (currentState == State.FIN_WAIT_1)) {
-      // go to finwait2
-      changeStates(State.FIN_WAIT_2);
-    }
+          createTimerTask(30 * 1000, null);
+        }
+        break;
 
-    else if (p.ackFlag && (currentState == State.CLOSING)) {
-      // go to timewait
-      changeStates(State.TIME_WAIT);
-      createTimerTask(30 * 1000, null);
-    }
+      case CLOSING:
+        if (p.ackFlag) {
+          // go to timewait
+          changeStates(State.TIME_WAIT);
+          createTimerTask(30 * 1000, null);
+        }
+        else if (p.finFlag) {
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          TCPWrapper.send(ackPack, address);
+        }
+        break;
 
-    else if (p.ackFlag && (currentState == State.LAST_ACK)) {
-      // go to timewait
-      changeStates(State.TIME_WAIT);
-      createTimerTask(30 * 1000, null);
+      case CLOSE_WAIT: 
+        if (p.finFlag) {
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          TCPWrapper.send(ackPack, address);
+        }
+        break;
+
+      case LAST_ACK:
+        if (p.ackFlag) {
+
+          // go to timewait
+          changeStates(State.TIME_WAIT);
+          createTimerTask(30 * 1000, null);
+        }
+        else if (p.finFlag) {
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          TCPWrapper.send(ackPack, address);
+        }
+        break;
+      
+      case TIME_WAIT: 
+        if (p.finFlag) {
+          TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
+          TCPWrapper.send(ackPack, address);
+        }
+        break;
+
     }
 
     this.notifyAll(); 
