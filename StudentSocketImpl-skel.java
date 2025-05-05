@@ -100,7 +100,6 @@ class StudentSocketImpl extends BaseSocketImpl {
 
       changeStates(State.ESTABLISHED);
       setPacketInfo(p);
-      seqNum = p.ackNum;
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
       TCPWrapper.send(ackPack, address);
@@ -324,7 +323,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     localport = p.destPort;
     port = p.sourcePort; // remoteport = p.sourceport
     int tempSeqNum = p.seqNum;
-    seqNum = ackNum;
+    seqNum = p.ackNum;
     ackNum = tempSeqNum + 1;
     System.out.println("Changing Info " + address + " " + localport + " " + port);
     // System.out.flush();
