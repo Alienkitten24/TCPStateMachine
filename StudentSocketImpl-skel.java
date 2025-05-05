@@ -297,7 +297,6 @@ class StudentSocketImpl extends BaseSocketImpl {
       e.printStackTrace();
     }
 
-    System.out.println("LIORA " + address + localport + port);
     if (currentState == State.ESTABLISHED) {
       changeStates(State.FIN_WAIT_1);
     }
@@ -373,6 +372,9 @@ class StudentSocketImpl extends BaseSocketImpl {
   }
 
   private synchronized void sendPacket(TCPPacket p) {
+    if (p == null) {
+        return;
+    }
     TCPWrapper.send(p, address);
     TCPTimerTask timer = createTimerTask(30 * 1000, null);
 
