@@ -129,11 +129,6 @@ class StudentSocketImpl extends BaseSocketImpl {
           TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
           sendPacket(ackPack);
 
-          // if (p.ackFlag && timerTable.containsKey(currentState)) {
-          //   timerTable.get(currentState).cancel();
-          //   timerTable.remove(currentState);
-          //   packetTable.remove(currentState);
-          // }
         }
         else if (p.synFlag && p.ackFlag) {
           TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
@@ -344,16 +339,6 @@ class StudentSocketImpl extends BaseSocketImpl {
       TCPPacket packetToResend = packetTable.get(currentState);
       sendPacket(packetToResend);
     }
-
-
-
-      // try {
-      //   D.unregisterConnection(address, localport, port, this);
-      // }
-      // catch (Exception e) {
-      //   e.printStackTrace();
-      // }
-    
   }
 
   private synchronized void changeStates(State nextState) {
