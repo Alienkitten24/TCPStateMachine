@@ -85,8 +85,6 @@ class StudentSocketImpl extends BaseSocketImpl {
     switch (currentState) {
       case LISTEN:
         if (p.synFlag) {
-          System.out.println("SYN YESSIR");
-
           changeStates(State.SYN_RCVD);
           setPacketInfo(p);
 
@@ -106,7 +104,6 @@ class StudentSocketImpl extends BaseSocketImpl {
 
       case SYN_SENT:
         if (p.synFlag && p.ackFlag) {
-          System.out.println("SYNACK YESSIR");
 
           changeStates(State.ESTABLISHED);
           ackNum = p.ackNum;
@@ -119,8 +116,6 @@ class StudentSocketImpl extends BaseSocketImpl {
 
       case SYN_RCVD:
         if (p.ackFlag) {
-          System.out.println("ACK YESSIR");
-    
           changeStates(State.ESTABLISHED);
         }
         break;
@@ -134,11 +129,11 @@ class StudentSocketImpl extends BaseSocketImpl {
           TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
           sendPacket(ackPack);
 
-          if (p.ackFlag && timerTable.containsKey(currentState)) {
-            timerTable.get(currentState).cancel();
-            timerTable.remove(currentState);
-            packetTable.remove(currentState);
-          }
+          // if (p.ackFlag && timerTable.containsKey(currentState)) {
+          //   timerTable.get(currentState).cancel();
+          //   timerTable.remove(currentState);
+          //   packetTable.remove(currentState);
+          // }
         }
         else if (p.synFlag && p.ackFlag) {
           TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
@@ -230,7 +225,6 @@ class StudentSocketImpl extends BaseSocketImpl {
    * Note that localport is already set prior to this being called.
    */
   public synchronized void acceptConnection() throws IOException {
-    // System.out.println("Register listen socket port is " + localport);
     D.registerListeningSocket(localport, this);
 
     changeStates(State.LISTEN);
