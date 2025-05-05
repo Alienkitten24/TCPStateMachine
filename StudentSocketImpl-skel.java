@@ -290,17 +290,18 @@ class StudentSocketImpl extends BaseSocketImpl {
    */
   public synchronized void handleTimer(Object ref){
 
-    // this must run only once the last timer (30 second timer) has expired
-    tcpTimer.cancel();
-    tcpTimer = null;
-
     if (currentState == State.TIME_WAIT) {
       changeStates(State.CLOSED);
+      // this must run only once the last timer (30 second timer) has expired
+      tcpTimer.cancel();
+      tcpTimer = null;
     }
     else {
       TCPPacket packetToResend = packetTable.get(currentState);
       sendPacket(packetToResend);
     }
+
+
 
       // try {
       //   D.unregisterConnection(address, localport, port, this);
