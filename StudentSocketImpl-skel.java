@@ -80,6 +80,9 @@ class StudentSocketImpl extends BaseSocketImpl {
     if (p.synFlag && (currentState == State.LISTEN)) {
       System.out.println("SYN YESSIR");
 
+      changeStates(State.SYN_RCVD);
+      setPacketInfo(p);
+
       try {
         D.unregisterListeningSocket(localport, this);
         D.registerConnection(address, localport, port, this);
@@ -88,8 +91,6 @@ class StudentSocketImpl extends BaseSocketImpl {
         e.printStackTrace();
       }
 
-      changeStates(State.SYN_RCVD);
-      setPacketInfo(p);
       
       TCPPacket synAckPack = new TCPPacket(localport, port, seqNum, ackNum, true, true, false, windowSize, null);
       TCPWrapper.send(synAckPack, address);
