@@ -107,6 +107,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       System.out.println("SYNACK YESSIR");
 
       changeStates(State.ESTABLISHED);
+      ackNum = p.ackNum;
       setPacketInfo(p);
 
       TCPPacket ackPack = new TCPPacket(localport, port, seqNum, ackNum, true, false, false, windowSize, null);
