@@ -304,6 +304,7 @@ class StudentSocketImpl extends BaseSocketImpl {
       changeStates(State.CLOSED);
 
       try {
+        System.out.println("OH NAHHH");
         D.unregisterConnection(address, localport, port, this);
       }
       catch (Exception e) {
@@ -323,7 +324,7 @@ class StudentSocketImpl extends BaseSocketImpl {
     localport = p.destPort;
     port = p.sourcePort; // remoteport = p.sourceport
     int tempSeqNum = p.seqNum;
-    seqNum = p.ackNum;
+    seqNum = ackNum;
     ackNum = tempSeqNum + 1;
     System.out.println("Changing Info " + address + " " + localport + " " + port);
     // System.out.flush();
